@@ -1,5 +1,4 @@
 library(tidyverse)
-library
 library(MASS)
 
 # Vorbereitung
@@ -7,12 +6,12 @@ library(MASS)
 n <- 100
 Sigma <- matrix(c( 1 , rep (.1 ,4) , .1 , 1 , rep ( .1 , 3 ) , .1 , .1 , 1 , .1 , .1 , rep(.1 ,3) ,1 ,.1 , rep (.1 ,4) ,1) ,5 ,5)
 mu <- c(rep(0,5))
-View(Sigma)
+#View(Sigma)
 ?mvrnorm
 
 X <- mvrnorm(n, mu, Sigma)
 # X in R^{n \times p}
-View(X)
+#View(X)
 
 ## Aufgabe a)
 
@@ -52,22 +51,18 @@ w <- 0:100/100
 gamma <- (1/5) * sum(diag(Sigma))
 
 fehler_berechnen <- function(M, n, w){
-  storage <- matrix(0, nrow = 1000, ncol = 3)
+  storage <- array(0, dim = c(1000, 5, 5))
   I <- diag(1, nrow = 5, ncol = 5)
   for (i in (1:M)){
     X <- mvrnorm(n, mu, Sigma)
     S <- (1/n) * t(X) %*% X
     shrinkage <- w * gamma * I + (1-w) * S
-    # bias
-    storage[i,1] <- (1/5) * norm(shrinkage - Sigma, type = "F")
-    # variance 
-    storage[i,2] <- ((1/5) * norm(shrinkage - (w * gamma * I + (1-w) * Sigma), type = "F"))^2
-    # MSE
-    storage[i,3] <- ((1/5) * norm(shrinkage - Sigma))^2
+    storage[i,,] <- shrinkage
   }
-  squared_bias <- mean(storage[i,1])^2
-  variance <- mean(storage[i,2])
-  mse <- mean(storage[i,3])
+  mean_shrinkage <- apply(storage, c(2,3), mean)
+  squared_bias <- (mean_shrinkage - Sigma)^2
+  variance <- norm(mean_shrinkage - (w * gamma * I + (1-w) * S), type = "F")^2
+  mse <- norm(mean_shrinkage - Sigma, type = "F")^2
   return(c(squared_bias, variance, mse))
 }
 
@@ -75,10 +70,14 @@ ergebnisse <- data.frame(matrix(nrow = 101, ncol = 4))
 colnames(ergebnisse) <- c('w', 'SquaredBias', 'Variance', 'MSE')
 ergebnisse$w <- w
 
+
 for (i in (1:101)){
   ergebnisse[i,2:4] <- fehler_berechnen(M, n=100, w[i])
+  print(i)
 }
 View(ergebnisse)
+
+# hier stimmt was gar nicht
 
 ggplot() + 
   geom_point(aes(x=ergebnisse$w, y = ergebnisse$SquaredBias, color = "Squared Bias"), show.legend = TRUE) + 
@@ -89,7 +88,14 @@ ggplot() +
     values = c("Squared Bias" = "darkblue", "Variance" = "darkgreen", "MSE" = "darkred"),
     name = "Fehler"
   ) + 
+  #ylim(0, 0.0005) +
   theme_classic()
+
+
+# empirical optimal w ? kleinster mse?
+index <- which.min(ergebnisse$MSE)
+w_optimal <- ergebnisse$w[index]
+w_optimal
 
 # jetzt mit n = 1000
 
@@ -112,3 +118,9 @@ ggplot() +
     name = "Fehler"
   ) + 
   theme_classic()
+
+index <- which.min(ergebnisse_mod$MSE)
+w_optimal_mod <- ergebnisse$w[index]
+w_optimal_mod
+
+# optimales gewicht 0 ist bissi wild, passt der Erwartungswert?
