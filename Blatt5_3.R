@@ -23,15 +23,17 @@ get_shrinkage_est <- function(p, M){
   sample_cov <- (1/n) * t(X) %*% X
   
   # Parameter schätzen
-  gamma <- sum(diag(sample_cov)) 
+  # faktor (1/p) fehlt !
+  gamma <- (1/p) * sum(diag(sample_cov)) 
   I <- diag(1, nrow = p, ncol = p)
-  delta2 <- norm((1/p) * (sample_cov - gamma * I), type = "F")^2
+  delta2 <- (1/p) * norm((sample_cov - gamma * I), type = "F")^2
   summe <- sum(sapply(1:n, function(k) {
     X_k <- X[k,]                     
     diff <- X_k %*% t(X_k) - sample_cov                
-    norm(diff, type = "F")^2                
+    return((1/p)* norm(diff, type = "F")^2)               
   }))
   beta2_pilot <- (1/n^2) * summe
+  beta2 <- min(beta2_pilot, delta2)
   alpha2 <- delta2 - beta2
   # jetzt Gewichte berechnen
   rho1 <- (beta2/delta2) * gamma
@@ -58,23 +60,23 @@ get_ratio <- function(p){
   print(p)
   Sigma <- diag(0.9, nrow = p, ncol = p) + matrix(0.1, p, p)
   Sigma_inv <- solve(Sigma)
-  fehler_sample_cov <- ((1/p) * norm(Sigma_inv- solve(get_sample_cov(p=p, M=1000)), type = "2"))^2
-  fehler_shrinkage <- ((1/p) * norm(Sigma_inv - solve(get_shrinkage_est(p=p, M=1000)), type= "2"))^2
+  fehler_sample_cov <- (1/p) * (norm(Sigma_inv- solve(get_sample_cov(p=p, M=1000)), type = "F"))^2
+  fehler_shrinkage <- (1/p) * (norm(Sigma_inv - solve(get_shrinkage_est(p=p, M=1000)), type= "F"))^2
   ratio <- fehler_sample_cov / fehler_shrinkage
 }
 
 
-max_l <- 30
-ratios <- array(0, dim = max_l)
+dim <- (1:10) * 10
+ratios <- array(0, dim = 10)
 
-for (p in (1:max_l)){
-  ratios[p] <- get_ratio(p)
+for (p in (1:10)){
+  ratios[p] <- get_ratio(dim[p])
 }
 
 View(ratios)
-p_werte <- (1:max_l)
+dim
 
 ggplot() + 
-  geom_point(aes(x = p_werte, y = ratios))
+  geom_point(aes(x = dim, y = ratios))
 
 

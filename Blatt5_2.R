@@ -39,17 +39,18 @@ sample_cov <- (1/n) * t(X) %*% X
 # Parameter schätzen
 
 # gamma
-gamma <- sum(diag(sample_cov)) 
+gamma <- (1/5) * sum(diag(sample_cov)) 
 
 # delta^2
 I <- diag(1, nrow = 5, ncol = 5)
-delta2 <- norm((1/5) * (sample_cov - gamma * I), type = "F")^2
+delta2 <- (1/5) * norm( (sample_cov - gamma * I), type = "F")^2
 
 # beta^2
+# vll anders aufschreiben sd verständlich
 summe <- sum(sapply(1:n, function(k) {
   X_k <- X[k,]                     
   diff <- X_k %*% t(X_k) - sample_cov                
-  norm(diff, type = "F")^2                
+  return((1/5) * norm(diff, type = "F")^2)                
 }))
 beta2_pilot <- (1/n^2) * summe
 beta2 <- min(beta2_pilot, delta2)
@@ -61,6 +62,8 @@ alpha2 <- delta2 - beta2
 rho1 <- (beta2/delta2) * gamma
 rho2 <- alpha2/delta2
 
+# gewichte und schätzer aus einer simulation rausballern !
+
 get_estimator <- function(M, w1, w2){
   storage <- array(0, dim = c(1000, 5, 5))
   I <- diag(1, nrow = 5, ncol = 5)
@@ -71,12 +74,15 @@ get_estimator <- function(M, w1, w2){
     storage[i,,] <- estimator
   }
   mean_estimator <- apply(storage, c(2,3), mean)
+  # nicht gut matrix zu mitteln 
   return(mean_estimator)
 }
 
 non_oracle <- get_estimator(M,rho1, rho2)
 
 # Eigenwerte vergleichen
+
+## eigenwerte danach aus mittelwert berechnen oder währneddessen?
 
 true_eigenvalues <- eigen(Sigma)$values
 estimated_ev <- eigen(non_oracle)$values
@@ -90,8 +96,10 @@ ggplot() +
 rho1
 rho2
 
+# compare to sample cov
+
 # rho2 ist nah dran, und rho1 = w * gamma circa, also passt ungefähr
 # komisch dass ergebnisse dann nicht besser sind
 
-
+# siehe daniel bzw vllt noch boxplot bauen
 
