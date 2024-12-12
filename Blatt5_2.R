@@ -1,105 +1,83 @@
-library(tidyverse)
-library(MASS)
 
-# Vorbereitung
+# Aufgabe b)
 
-n <- 100
-Sigma <- matrix(c( 1 , rep (.1 ,4) , .1 , 1 , rep ( .1 , 3 ) , .1 , .1 , 1 , .1 , .1 , rep(.1 ,3) ,1 ,.1 , rep (.1 ,4) ,1) ,5 ,5)
-mu <- c(rep(0,5))
 
-## Aufgabe c)
+w <- 0:100/100
+gamma <- (1/5) * sum(diag(Sigma))
+p <- 5
 
-M <- 1000
-n <- 100
-
-# Pilot Estimator = Sample Covariance Matrix
-# soll für das schätzen vom optimal weight auch schon monte carlo gemacht werden?
-# falls ja diese funktion verwenden, aber welches X?
-# erstmal lassen
-
-get_pilot <- function(M, n){
+fehler_berechnen <- function(M, n, w){
   storage <- array(0, dim = c(1000, 5, 5))
   I <- diag(1, nrow = 5, ncol = 5)
   for (i in (1:M)){
     X <- mvrnorm(n, mu, Sigma)
     S <- (1/n) * t(X) %*% X
-    storage[i,,] <- S
+    shrinkage <- w * gamma * I + (1-w) * S
+    storage[i,,] <- shrinkage
   }
-  mean_scm <- apply(storage, c(2,3), mean)
-
-  return(mean_scm)
+  mean_shrinkage <- apply(storage, c(2,3), mean)
+  # hier nochmal frobenius norm prüfen
+  squared_bias <- (1/p)*(norm(mean_shrinkage - Sigma, type="F"))^2
+  variance <- (1/p)*norm(mean_shrinkage - (w * gamma * I + (1-w) * Sigma), type = "F")^2
+  mse <- (1/p)*norm(mean_shrinkage - Sigma, type = "F")^2
+  return(c(squared_bias, variance, mse))
 }
 
-# Pilot Estimator Teil 1)
+ergebnisse <- data.frame(matrix(nrow = 101, ncol = 4))
+colnames(ergebnisse) <- c('w', 'SquaredBias', 'Variance', 'MSE')
+ergebnisse$w <- w
 
-X <- mvrnorm(n, mu, Sigma)
-sample_cov <- (1/n) * t(X) %*% X
+
+for (i in (1:101)){
+  ergebnisse[i,2:4] <- fehler_berechnen(M, n=100, w[i])
+  print(i)
+}
+View(ergebnisse)
+
+# hier stimmt was gar nicht
+
+ggplot() + 
+  geom_point(aes(x=ergebnisse$w, y = ergebnisse$SquaredBias, color = "Squared Bias"), show.legend = TRUE) + 
+  geom_point(aes(x=ergebnisse$w, y = ergebnisse$Variance, color = "Variance"), show.legend = TRUE) + 
+  geom_point(aes(x=ergebnisse$w, y = ergebnisse$MSE, color = "MSE"), show.legend = TRUE) + 
+  labs(x = "Gewicht w", y = "Werte", title = "Shrinkage Estimator Performance je nach Gewicht, n = 100") +
+  scale_color_manual(
+    values = c("Squared Bias" = "darkblue", "Variance" = "darkgreen", "MSE" = "darkred"),
+    name = "Fehler"
+  ) + 
+  #ylim(0, 0.0005) +
+  theme_classic()
 
 
-# Parameter schätzen
+# empirical optimal w ? kleinster mse?
+index <- which.min(ergebnisse$MSE)
+w_optimal <- ergebnisse$w[index]
+w_optimal
 
-# gamma
-gamma <- (1/5) * sum(diag(sample_cov)) 
+# jetzt mit n = 1000
 
-# delta^2
-I <- diag(1, nrow = 5, ncol = 5)
-delta2 <- (1/5) * norm( (sample_cov - gamma * I), type = "F")^2
+ergebnisse_mod <- data.frame(matrix(nrow = 101, ncol = 4))
+colnames(ergebnisse_mod) <- c('w', 'SquaredBias', 'Variance', 'MSE')
+ergebnisse_mod$w <- w
 
-# beta^2
-# vll anders aufschreiben sd verständlich
-summe <- sum(sapply(1:n, function(k) {
-  X_k <- X[k,]                     
-  diff <- X_k %*% t(X_k) - sample_cov                
-  return((1/5) * norm(diff, type = "F")^2)                
-}))
-beta2_pilot <- (1/n^2) * summe
-beta2 <- min(beta2_pilot, delta2)
-
-# alpha^2
-alpha2 <- delta2 - beta2
-
-# jetzt Gewichte berechnen
-rho1 <- (beta2/delta2) * gamma
-rho2 <- alpha2/delta2
-
-# gewichte und schätzer aus einer simulation rausballern !
-
-get_estimator <- function(M, w1, w2){
-  storage <- array(0, dim = c(1000, 5, 5))
-  I <- diag(1, nrow = 5, ncol = 5)
-  for (i in (1:M)){
-    X <- mvrnorm(n, mu, Sigma)
-    S <- (1/n) * t(X) %*% X
-    estimator <- w1 * I + w2 * S
-    storage[i,,] <- estimator
-  }
-  mean_estimator <- apply(storage, c(2,3), mean)
-  # nicht gut matrix zu mitteln 
-  return(mean_estimator)
+for (i in (1:101)){
+  ergebnisse_mod[i,2:4] <- fehler_berechnen(M, n=1000, w[i])
+  print(i)
 }
 
-non_oracle <- get_estimator(M,rho1, rho2)
+ggplot() + 
+  geom_point(aes(x=ergebnisse_mod$w, y = ergebnisse_mod$SquaredBias, color = "Squared Bias"), show.legend = TRUE) + 
+  geom_point(aes(x=ergebnisse_mod$w, y = ergebnisse_mod$Variance, color = "Variance"), show.legend = TRUE) + 
+  geom_point(aes(x=ergebnisse_mod$w, y = ergebnisse_mod$MSE, color = "MSE"), show.legend = TRUE) + 
+  labs(x = "Gewicht w", y = "Werte", title = "Shrinkage Estimator Performance je nach Gewicht, n = 1000") +
+  scale_color_manual(
+    values = c("Squared Bias" = "darkblue", "Variance" = "darkgreen", "MSE" = "darkred"),
+    name = "Fehler"
+  ) + 
+  theme_classic()
 
-# Eigenwerte vergleichen
+index <- which.min(ergebnisse_mod$MSE)
+w_optimal_mod <- ergebnisse$w[index]
+w_optimal_mod
 
-## eigenwerte danach aus mittelwert berechnen oder währneddessen?
-
-true_eigenvalues <- eigen(Sigma)$values
-estimated_ev <- eigen(non_oracle)$values
-
-ggplot() +
-  geom_point(aes(x=indizes, y = true_eigenvalues), size = 2, color = "blue") +
-  geom_point(aes(x=indizes, y = estimated_ev), size = 2, color = "darkgreen") +
-  labs(x = "Indizes", y = "Eigenwerte", titel = "Wahre & Berechnete Eigenwerte")
-
-# Optimale Gewichte anschauen
-rho1
-rho2
-
-# compare to sample cov
-
-# rho2 ist nah dran, und rho1 = w * gamma circa, also passt ungefähr
-# komisch dass ergebnisse dann nicht besser sind
-
-# siehe daniel bzw vllt noch boxplot bauen
-
+# optimales gewicht 0 ist bissi wild, passt der Erwartungswert?

@@ -4,131 +4,86 @@ library(MASS)
 # Vorbereitung
 
 n <- 100
+dim <- 5
+# Kovariance Matrix und Mittelwert erstellen
 Sigma <- matrix(c( 1 , rep (.1 ,4) , .1 , 1 , rep ( .1 , 3 ) , .1 , .1 , 1 , .1 , .1 , rep(.1 ,3) ,1 ,.1 , rep (.1 ,4) ,1) ,5 ,5)
-mu <- c(rep(0,5))
-#View(Sigma)
-?mvrnorm
-
+mu <- c(rep(0,dim))
+# Multivariate Daten erzeugen
 X <- mvrnorm(n, mu, Sigma)
-# X in R^{n \times p}
-#View(X)
+# Vorsicht: X in R^{n \times p}
+
 
 ## Aufgabe a)
 
 M <- 1000
-true_eigenvalues <- sort(eigen(Sigma)$values)
-# , symmetric=TRUE, only.values=TRUE vll noch benutzen
-print(true_eigenvalues)
+# symmetric -> Matrix ist symmetrisch
+# only.values -> Eigenvektoren werden nicht berechnet
+# decreasing = FALSE -> Eigenwerte werden aufsteigend sortiert
+true_eigenvalues <- sort(eigen(Sigma, symmetric=TRUE, only.values=TRUE)$values, decreasing = FALSE)
 
-storage_ev <- matrix(0, nrow = M, ncol = 5)
+# Speicher für Eigenwerte erstellen
+storage_ev <- matrix(0, nrow = M, ncol = dim)
+# Monte Carlo Simulation
 for (i in (1:M)){
   X <- mvrnorm(n, mu, Sigma)
   S <- (1/n) * t(X) %*% X
   storage_ev[i,] <- sort(eigen(S)$values)
-  # sort in welche richtung?
 }
-calc_ev <- sort((1/M) * colSums(storage_ev))
-calc_ev
+# Mittelwerte der Eigenwerte berechnen
+calc_ev <- (1/M) * colSums(storage_ev)
 
-?sort
+# Einfacher Plot von berechneten und wahren Eigenwerten
+
 indizes <- c(1,2,3,4,5)
-
 ggplot() +
   geom_point(aes(x=indizes, y = true_eigenvalues), size = 2, color = "blue") +
   geom_point(aes(x=indizes, y = calc_ev), size = 2, color = "darkgreen") +
-  labs(x = "Indizes", y = "Eigenwerte", titel = "Wahre & Berechnete Eigenwerte") +
+  labs(x = "Indizes", y = "Eigenwerte", title = "Wahre & Berechnete Eigenwerte") +
   theme_minimal()
 
-calc_ev_df <- data.frame(Eigenwerte = c(storage_ev))
+# Boxplot
+# Data Frame erstellen
+### hier vllt noch wahre werte eintragen?
+eigenvalues_df <- data.frame(matrix(0, nrow=dim*M, ncol=2))
+colnames(eigenvalues_df) = c("Index", "Werte")
+for (i in (0:4)){
+  eigenvalues_df$Index[(i*M + 1): ((i+1)*M)] = rep((i+1), M)
+  eigenvalues_df$Werte[(i*M + 1): ((i+1)*M)] = storage_ev[,(i+1)]
+}
+eigenvalues_df$Index <- as.factor(eigenvalues_df$Index)
 
-ggplot(calc_ev_df, aes(x=Eigenwerte)) +
-  geom_histogram(fill="pink", binwidth = 0.05) +
+ggplot(eigenvalues_df, aes(x=Index, y=Werte)) + 
+  geom_boxplot(color="blue",fill="blue", alpha=0.2, 
+               notch=TRUE, notchwidth = 0.6,
+               outlier.colour="red", outlier.fill="red", outlier.size=2) +
+  labs(
+    title = "Boxplot der Eigenwerte",
+    x = "Index",
+    y = "Eigenwerte"
+  ) +
+  theme_minimal()
+
+# Histogram der Eigenwerte 
+# weg? legende hinzufügen!
+ggplot(eigenvalues_df, aes(x=Werte)) +
+  geom_histogram(fill="lightpink", binwidth = 0.05) +
   geom_vline(xintercept = mean(true_eigenvalues), color = "blue", linetype = "solid", linewidth = 1) +
-  geom_vline(xintercept = mean(c(calc_ev)), color = "red", linetype = "dotted", linewidth = 1) +
+  geom_vline(xintercept = mean(c(calc_ev)), color = "purple", linetype = "dotted", linewidth = 1) +
+  labs(
+    title = "Histogram der Eigenwerte",
+    x = "Werte",
+    y = "Anzahl"
+  ) +
   theme_minimal()
 # legen und überschrift fehlt usw.
 
+sum_true_ev <- sum(true_eigenvalues)
+sum_calc_ev <- rowSums(storage_ev)
+
+ggplot() + 
+  geom_histogram(aes(x = sum_calc_ev), binwidth = 0.05, color="blue",fill="blue", alpha=0.4) +
+  labs(x = "Summe der Eigenwerte", y = "Anzahl",
+       title = "Histogram der Summen von Eigenwerten") +
+  theme_minimal()
+
 # vllt auch sum in histogram packen
-
-# Aufgabe b)
-
-
-w <- 0:100/100
-gamma <- (1/5) * sum(diag(Sigma))
-p <- 5
-
-fehler_berechnen <- function(M, n, w){
-  storage <- array(0, dim = c(1000, 5, 5))
-  I <- diag(1, nrow = 5, ncol = 5)
-  for (i in (1:M)){
-    X <- mvrnorm(n, mu, Sigma)
-    S <- (1/n) * t(X) %*% X
-    shrinkage <- w * gamma * I + (1-w) * S
-    storage[i,,] <- shrinkage
-  }
-  mean_shrinkage <- apply(storage, c(2,3), mean)
-  # hier nochmal frobenius norm prüfen
-  squared_bias <- (1/p)*(norm(mean_shrinkage - Sigma, type="F"))^2
-  variance <- (1/p)*norm(mean_shrinkage - (w * gamma * I + (1-w) * Sigma), type = "F")^2
-  mse <- (1/p)*norm(mean_shrinkage - Sigma, type = "F")^2
-  return(c(squared_bias, variance, mse))
-}
-
-ergebnisse <- data.frame(matrix(nrow = 101, ncol = 4))
-colnames(ergebnisse) <- c('w', 'SquaredBias', 'Variance', 'MSE')
-ergebnisse$w <- w
-
-
-for (i in (1:101)){
-  ergebnisse[i,2:4] <- fehler_berechnen(M, n=100, w[i])
-  print(i)
-}
-View(ergebnisse)
-
-# hier stimmt was gar nicht
-
-ggplot() + 
-  geom_point(aes(x=ergebnisse$w, y = ergebnisse$SquaredBias, color = "Squared Bias"), show.legend = TRUE) + 
-  geom_point(aes(x=ergebnisse$w, y = ergebnisse$Variance, color = "Variance"), show.legend = TRUE) + 
-  geom_point(aes(x=ergebnisse$w, y = ergebnisse$MSE, color = "MSE"), show.legend = TRUE) + 
-  labs(x = "Gewicht w", y = "Werte", title = "Shrinkage Estimator Performance je nach Gewicht, n = 100") +
-  scale_color_manual(
-    values = c("Squared Bias" = "darkblue", "Variance" = "darkgreen", "MSE" = "darkred"),
-    name = "Fehler"
-  ) + 
-  #ylim(0, 0.0005) +
-  theme_classic()
-
-
-# empirical optimal w ? kleinster mse?
-index <- which.min(ergebnisse$MSE)
-w_optimal <- ergebnisse$w[index]
-w_optimal
-
-# jetzt mit n = 1000
-
-ergebnisse_mod <- data.frame(matrix(nrow = 101, ncol = 4))
-colnames(ergebnisse_mod) <- c('w', 'SquaredBias', 'Variance', 'MSE')
-ergebnisse_mod$w <- w
-
-for (i in (1:101)){
-  ergebnisse_mod[i,2:4] <- fehler_berechnen(M, n=1000, w[i])
-  print(i)
-}
-
-ggplot() + 
-  geom_point(aes(x=ergebnisse_mod$w, y = ergebnisse_mod$SquaredBias, color = "Squared Bias"), show.legend = TRUE) + 
-  geom_point(aes(x=ergebnisse_mod$w, y = ergebnisse_mod$Variance, color = "Variance"), show.legend = TRUE) + 
-  geom_point(aes(x=ergebnisse_mod$w, y = ergebnisse_mod$MSE, color = "MSE"), show.legend = TRUE) + 
-  labs(x = "Gewicht w", y = "Werte", title = "Shrinkage Estimator Performance je nach Gewicht, n = 1000") +
-  scale_color_manual(
-    values = c("Squared Bias" = "darkblue", "Variance" = "darkgreen", "MSE" = "darkred"),
-    name = "Fehler"
-  ) + 
-  theme_classic()
-
-index <- which.min(ergebnisse_mod$MSE)
-w_optimal_mod <- ergebnisse$w[index]
-w_optimal_mod
-
-# optimales gewicht 0 ist bissi wild, passt der Erwartungswert?
