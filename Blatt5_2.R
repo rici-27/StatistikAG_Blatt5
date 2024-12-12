@@ -7,25 +7,43 @@ gamma <- (1/5) * sum(diag(Sigma))
 p <- 5
 
 fehler_berechnen <- function(M, n, w){
-  storage <- array(0, dim = c(1000, 5, 5))
-  I <- diag(1, nrow = 5, ncol = 5)
+  
+  # Zwischenspeicher für Squared Bias, Variance, MSE
+  sum_bias <- 0
+  sum_var <- 0
+  sum_mse <- 0
+  
+  # Einheitsmatrix für Shrinkage Schätzer
+  I <- diag(1, nrow = p, ncol = p)
+  
   for (i in (1:M)){
     X <- mvrnorm(n, mu, Sigma)
     S <- (1/n) * t(X) %*% X
     shrinkage <- w * gamma * I + (1-w) * S
-    storage[i,,] <- shrinkage
+    
+    ############ hier weiter machen
+    expectation_of_shrink_est <- (1-weight)* sigma_task_0 + weight*gamma*diag(dim)
+    
+    A <- expectation_of_shrink_est - sigma_task_0  #same for all j in M, not dependent on Sn!!
+    #! might be calculated ouit of for loop
+    sum_bias <- sum_bias + sum(diag(A %*% t(A)))
+    
+    B <- shrink_est - expectation_of_shrink_est #depends on j and Sn
+    sum_var <- sum_var + sum(diag(B %*% t(B)))
+    
+    C <- shrink_est - sigma_task_0 #depends on j and Sn
+    sum_mse <- sum_mse + sum(diag(C %*% t(C)))
+    
+    
   }
-  mean_shrinkage <- apply(storage, c(2,3), mean)
-  # hier nochmal frobenius norm prüfen
-  squared_bias <- (1/p)*(norm(mean_shrinkage - Sigma, type="F"))^2
-  variance <- (1/p)*norm(mean_shrinkage - (w * gamma * I + (1-w) * Sigma), type = "F")^2
-  mse <- (1/p)*norm(mean_shrinkage - Sigma, type = "F")^2
-  return(c(squared_bias, variance, mse))
+  return(storage)
 }
 
-ergebnisse <- data.frame(matrix(nrow = 101, ncol = 4))
-colnames(ergebnisse) <- c('w', 'SquaredBias', 'Variance', 'MSE')
-ergebnisse$w <- w
+  
+# Data Frame Speicher für Fehlertherme und zugehöriges Gewicht
+storage <- data.frame(array(0, dim = c(length(w), 4)))
+colnames(storage) <- c("Weight", "Squared Bias", "Variance", "MSE")
+View(storage)
 
 
 for (i in (1:101)){
