@@ -42,19 +42,29 @@ for (i in (0:4)){
   eigenvalues_df$Werte[(i*M + 1): ((i+1)*M)] = storage_ev[,(i+1)]
 }
 eigenvalues_df$Index <- as.factor(eigenvalues_df$Index)
+
 # Plot
-ggplot(eigenvalues_df, aes(x=Index, y=Werte)) + 
-  geom_boxplot(color="blue",fill="blue", alpha=0.2, 
-               notch=TRUE, notchwidth = 0.6,
-               outlier.colour="red", outlier.fill="red", outlier.size=2) +
-  annotate("segment", x = 0.5, xend = 4.5, y = 0.9, yend = 0.9, color = "darkgreen", linetype = "dashed", size = 0.8) +
-  annotate("segment", x = 4.5, xend = 5.5, y = 1.4, yend = 1.4, color = "darkgreen", linetype = "dashed", size = 0.8) +
+ggplot(eigenvalues_df, aes(x = Index, y = Werte)) + 
+  geom_boxplot(color = "blue", fill = "blue", alpha = 0.2, 
+               notch = TRUE, notchwidth = 0.6,
+               outlier.colour = "red", outlier.fill = "red", outlier.size = 2) +
+  geom_segment(aes(x = 0.5, xend = 4.5, y = 0.9, yend = 0.9, color = "Eigenwert 0.9"), 
+               linetype = "dashed", size = 0.8, inherit.aes = FALSE) +
+  geom_segment(aes(x = 4.5, xend = 5.5, y = 1.4, yend = 1.4, color = "Eigenwert 1.4"), 
+               linetype = "dashed", size = 0.8, inherit.aes = FALSE) +
+  scale_color_manual(
+    values = c("Eigenwert 0.9" = "darkgreen", "Eigenwert 1.4" = "darkred"),
+    name = "Legende"
+  ) +
   labs(
     title = "Boxplot der Eigenwerte",
     x = "Index",
     y = "Eigenwerte"
   ) +
-  theme_minimal()
+  theme_minimal() +
+  theme(
+    plot.title = element_text(face = "bold", size = 14, hjust = 0.5),
+  )
 
 # Histogram aller Eigenwerte
 ggplot(eigenvalues_df, aes(x = Werte)) +
@@ -67,7 +77,10 @@ ggplot(eigenvalues_df, aes(x = Werte)) +
     x = "Werte",
     y = "Anzahl"
   ) + 
-  theme_minimal()
+  theme_minimal() +
+  theme(
+    plot.title = element_text(face = "bold", size = 14, hjust = 0.5)
+  )
 
 # Histogram der Summen von Eigenwerten
 sum_true_ev <- sum(true_eigenvalues)
@@ -79,5 +92,8 @@ ggplot() +
        title = "Histogram der Summen von Eigenwerten") +
   geom_vline(aes(xintercept = sum(true_eigenvalues), color = "True Sum"), linetype = "solid", linewidth = 1) +
   scale_color_manual(values = c("True Sum" = "blue"), name = "Legende") +
-  theme_minimal()
+  theme_minimal() +
+  theme(
+    plot.title = element_text(face = "bold", size = 14, hjust = 0.5)
+  )
 

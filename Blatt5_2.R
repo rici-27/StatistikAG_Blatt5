@@ -1,101 +1,114 @@
+library(tidyverse)
+library(MASS)
 
-# Aufgabe b)
+## Aufgabe b)
 
-
+# Parameter
+p <- 5
+n <- 100
+M <- 1000
+Sigma <- matrix(c( 1 , rep (.1 ,4) , .1 , 1 , rep ( .1 , 3 ) , .1 , .1 , 1 , .1 , .1 , rep(.1 ,3) ,1 ,.1 , rep (.1 ,4) ,1) ,5 ,5)
+mu <- c(rep(0,p))
 w <- 0:100/100
 gamma <- (1/5) * sum(diag(Sigma))
-p <- 5
 
-fehler_berechnen <- function(M, n, w){
+# Funktion erstellen um Fehler für jeweiliges Gewicht w zu erhalten
+# Parameter: Anzahl von Iterationen M, Beobachtungen n, Gewicht w
+
+get_errors <- function(M, n, w){
   
   # Zwischenspeicher für Squared Bias, Variance, MSE
   sum_bias <- 0
   sum_var <- 0
   sum_mse <- 0
   
-  # Einheitsmatrix für Shrinkage Schätzer
-  I <- diag(1, nrow = p, ncol = p)
-  
   for (i in (1:M)){
+    
     X <- mvrnorm(n, mu, Sigma)
     S <- (1/n) * t(X) %*% X
-    shrinkage <- w * gamma * I + (1-w) * S
+    shrink_est <- w * gamma * diag(p) + (1-w) * S
     
-    ############ hier weiter machen
-    expectation_of_shrink_est <- (1-weight)* sigma_task_0 + weight*gamma*diag(dim)
+    # Erwartungswert des Shrinkage Estimators
+    expectation_of_shrink_est <- w * gamma * diag(p) + (1-w) * Sigma 
     
-    A <- expectation_of_shrink_est - sigma_task_0  #same for all j in M, not dependent on Sn!!
-    #! might be calculated ouit of for loop
-    sum_bias <- sum_bias + sum(diag(A %*% t(A)))
+    # Squared Bias # gleich für jede Iteration!
+    A <- expectation_of_shrink_est - Sigma
+    sum_bias <- sum_bias + (1/p) * norm(A, type = "F")^2
     
-    B <- shrink_est - expectation_of_shrink_est #depends on j and Sn
-    sum_var <- sum_var + sum(diag(B %*% t(B)))
+    # Variance
+    B <- shrink_est - expectation_of_shrink_est
+    sum_var <- sum_var + (1/p) * norm(B, type = "F")^2
     
-    C <- shrink_est - sigma_task_0 #depends on j and Sn
-    sum_mse <- sum_mse + sum(diag(C %*% t(C)))
-    
+    # Mean Squared Error
+    C <- shrink_est - Sigma
+    sum_mse <- sum_mse + (1/p) * norm(C, type = "F")^2
     
   }
-  return(storage)
+  
+  squared_bias <- (1/M) * sum_bias
+  variance <- (1/M) * sum_var
+  mse <- (1/M) * sum_mse
+  
+  return(c(w, squared_bias, variance, mse))
 }
 
   
-# Data Frame Speicher für Fehlertherme und zugehöriges Gewicht
+# Data Frame als Speicher für Fehlertherme und zugehöriges Gewicht
 storage <- data.frame(array(0, dim = c(length(w), 4)))
-colnames(storage) <- c("Weight", "Squared Bias", "Variance", "MSE")
+colnames(storage) <- c("Weight", "SquaredBias", "Variance", "MSE")
+
+# Berechnung
+for (i in (1:101)){
+  storage[i,] <- get_errors(M, n=100, w[i])
+  print(i)
+}
 View(storage)
 
-
-for (i in (1:101)){
-  ergebnisse[i,2:4] <- fehler_berechnen(M, n=100, w[i])
-  print(i)
-}
-View(ergebnisse)
-
-# hier stimmt was gar nicht
+storage$Weight
 
 ggplot() + 
-  geom_point(aes(x=ergebnisse$w, y = ergebnisse$SquaredBias, color = "Squared Bias"), show.legend = TRUE) + 
-  geom_point(aes(x=ergebnisse$w, y = ergebnisse$Variance, color = "Variance"), show.legend = TRUE) + 
-  geom_point(aes(x=ergebnisse$w, y = ergebnisse$MSE, color = "MSE"), show.legend = TRUE) + 
-  labs(x = "Gewicht w", y = "Werte", title = "Shrinkage Estimator Performance je nach Gewicht, n = 100") +
+  geom_point(aes(x=storage$Weight, y = storage$SquaredBias, color = "Squared Bias"), show.legend = TRUE) + 
+  geom_point(aes(x=storage$Weight, y = storage$Variance, color = "Variance"), show.legend = TRUE) + 
+  geom_point(aes(x=storage$Weight, y = storage$MSE, color = "MSE"), show.legend = TRUE) + 
+  labs(x = "Gewicht w", y = "Werte", title = "Shrinkage Estimator Performance nach Gewicht, n = 100") +
   scale_color_manual(
     values = c("Squared Bias" = "darkblue", "Variance" = "darkgreen", "MSE" = "darkred"),
     name = "Fehler"
   ) + 
-  #ylim(0, 0.0005) +
-  theme_classic()
+  theme_minimal() +
+  theme(
+    plot.title = element_text(face = "bold", size = 14, hjust = 0.5)
+  )
 
-
-# empirical optimal w ? kleinster mse?
-index <- which.min(ergebnisse$MSE)
-w_optimal <- ergebnisse$w[index]
+# Empirisch optimales Gewicht w bestimmen
+w_optimal <- storage$Weight[which.min(storage$MSE)]
 w_optimal
 
-# jetzt mit n = 1000
 
-ergebnisse_mod <- data.frame(matrix(nrow = 101, ncol = 4))
-colnames(ergebnisse_mod) <- c('w', 'SquaredBias', 'Variance', 'MSE')
-ergebnisse_mod$w <- w
+# Durchführung mit n = 1000
+
+storage_mod <- data.frame(array(0, dim = c(length(w), 4)))
+colnames(storage_mod) <- c("Weight", "SquaredBias", "Variance", "MSE")
 
 for (i in (1:101)){
-  ergebnisse_mod[i,2:4] <- fehler_berechnen(M, n=1000, w[i])
+  storage_mod[i,] <- get_errors(M, n=1000, w[i])
   print(i)
 }
 
 ggplot() + 
-  geom_point(aes(x=ergebnisse_mod$w, y = ergebnisse_mod$SquaredBias, color = "Squared Bias"), show.legend = TRUE) + 
-  geom_point(aes(x=ergebnisse_mod$w, y = ergebnisse_mod$Variance, color = "Variance"), show.legend = TRUE) + 
-  geom_point(aes(x=ergebnisse_mod$w, y = ergebnisse_mod$MSE, color = "MSE"), show.legend = TRUE) + 
-  labs(x = "Gewicht w", y = "Werte", title = "Shrinkage Estimator Performance je nach Gewicht, n = 1000") +
+  geom_point(aes(x=storage_mod$Weight, y = storage_mod$SquaredBias, color = "Squared Bias"), show.legend = TRUE) + 
+  geom_point(aes(x=storage_mod$Weight, y = storage_mod$Variance, color = "Variance"), show.legend = TRUE) + 
+  geom_point(aes(x=storage_mod$Weight, y = storage_mod$MSE, color = "MSE"), show.legend = TRUE) + 
+  labs(x = "Gewicht w", y = "Werte", title = "Shrinkage Estimator Performance nach Gewicht, n = 1000") +
   scale_color_manual(
     values = c("Squared Bias" = "darkblue", "Variance" = "darkgreen", "MSE" = "darkred"),
     name = "Fehler"
   ) + 
-  theme_classic()
+  theme_minimal() +
+  theme(
+    plot.title = element_text(face = "bold", size = 14, hjust = 0.5)
+  )
 
-index <- which.min(ergebnisse_mod$MSE)
-w_optimal_mod <- ergebnisse$w[index]
+w_optimal_mod <- storage_mod$Weight[which.min(storage_mod$MSE)]
 w_optimal_mod
 
-# optimales gewicht 0 ist bissi wild, passt der Erwartungswert?
