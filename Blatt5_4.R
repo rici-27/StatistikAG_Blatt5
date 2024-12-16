@@ -17,8 +17,6 @@ get_ratio <- function(p, n=100, M=1000){
   return(ratio)
 }
 
-
-
 dim <- (1:10) * 10
 ratios <- array(0, dim = 10)
 
@@ -30,7 +28,7 @@ for (i in (1:10)){
 View(ratios)
 
 ggplot() + 
-  geom_point(aes(x = dim, y = ratios))
+  geom_point(aes(x = dim, y = ratios)) 
 
 ############# hier nochmal schauen sieht bei daniel anders aus :_)
 

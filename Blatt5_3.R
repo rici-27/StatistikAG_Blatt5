@@ -127,7 +127,6 @@ get_all_est_ev_and_weights <- function(M, n, p){
     sample_cov_ev <- sort(eigen(sample_cov, symmetric=TRUE, only.values=TRUE)$values, decreasing = FALSE) 
     
     
-    
     for (j in (1:p)){
       ev_array[1, (i-1)*p + j, 1] <- j
       ev_array[1, (i-1)*p + j, 2] <- sample_cov_ev[j]
@@ -142,7 +141,7 @@ get_all_est_ev_and_weights <- function(M, n, p){
 all_iterations <- get_all_est_ev_and_weights(M=1000, n=100, p=5)
 all_est_ev <- all_iterations$eigenvalues
 weights <- all_iterations$weights
-
+View(weights)
 
 # Data Frames für BoxPlots erstellen
 
@@ -167,3 +166,16 @@ ggplot(all_ev_df, aes(x=Schätzer, y=Wert)) +
 
 ######### hier noch irgendwie weights plotten 
 
+View(weights)
+# überlegen wo die Nuller her kommen
+# wichtig: bei meinem rho1 ist gamma mit drin (soll so)
+test_df <- data.frame(weights[,1])
+View(test_df)
+colnames(test_df) = c("Weight")
+test_df$Para <- 1
+
+
+ggplot(test_df, aes(x = Para, y = Weight)) + 
+  geom_boxplot(color = "blue", fill = "blue", alpha = 0.2, 
+               notch = TRUE, notchwidth = 0.6,
+               outlier.colour = "red", outlier.fill = "red", outlier.size = 2) 
