@@ -42,23 +42,23 @@ n <- 336
 
 # Funktionen definieren
 
-get_sample_weights <- function(X){
-  sample_cov <- (1/n) * t(X) %*% X
+get_sample_weights <- function(X_transposed){
+  sample_cov <- (1/n) * t(X_transposed) %*% X_transposed
   ones_vector <- c(rep(1,p))
   sample_cov_inverse <- solve(sample_cov)
   weights <- (sample_cov_inverse %*% ones_vector) / sum(sample_cov_inverse %*% ones_vector)
   return(weights)
 }
 
-get_non_oracle_weights <- function(X){
-  sample_cov <- (1/n) * t(X) %*% X
+get_non_oracle_weights <- function(X_transposed){
+  sample_cov <- (1/n) * t(X_transposed) %*% X_transposed
 
   # Parameter schätzen
   gamma <- (1/p) * sum(diag(sample_cov %*% diag(p)))
   delta2 <- (1/5) * norm((sample_cov - gamma * diag(p)), type = "F")^2
   beta2_help <- rep(0, n)
   for (i in 1:n){
-    temp <- outer(t(X)[,i] , X[i,]) - sample_cov
+    temp <- outer(t(X_transposed)[,i] , X_transposed[i,]) - sample_cov
     beta2_help[i] <- (1/p) * norm(temp, type = "F")^2 
   }
   beta2_pilot <- (1/n^2) * sum(beta2_help)
@@ -85,9 +85,9 @@ weights_storage <- array(NA, dim = c(days, 3, p))
 weights_storage[,3,] <- 1/p
 
 for (i in (1:days)){
-  X <- data.matrix(Data[i:(days+i-1),])
-  weights_storage[i,1,] <- get_sample_weights(X)
-  weights_storage[i,2,] <- get_non_oracle_weights(X)
+  X_transposed <- data.matrix(Data[i:(days+i-1),])
+  weights_storage[i,1,] <- get_sample_weights(X_transposed)
+  weights_storage[i,2,] <- get_non_oracle_weights(X_transposed)
 }
 
 View(weights_storage[1,,])
@@ -109,5 +109,5 @@ print(paste("Overall return for shrinkage: " ,  as.character(overall_return_shri
 print(paste("Overall return for benchmark: " ,  as.character(overall_return_benchmark) , " ."))
 
 
-
+# verlauf über mehrere Tage
 

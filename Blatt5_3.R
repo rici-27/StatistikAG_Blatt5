@@ -10,7 +10,6 @@ M <- 1000
 Sigma <- matrix(c( 1 , rep (.1 ,4) , .1 , 1 , rep ( .1 , 3 ) , .1 , .1 , 1 , .1 , .1 , rep(.1 ,3) ,1 ,.1 , rep (.1 ,4) ,1) ,5 ,5)
 mu <- c(rep(0,p))
 w <- 0:100/100
-gamma <- (1/5) * sum(diag(Sigma))
 
 
 # Funktion zur Berechnung des Non-Oracle Estimator
@@ -18,22 +17,22 @@ gamma <- (1/5) * sum(diag(Sigma))
 get_non_oracle_estimator <- function(n, p){
   # Daten simulieren
   Sigma <- diag(0.9, nrow = p, ncol = p) + matrix(0.1, nrow = p, ncol = p)
-  mu = c(rep(0,p))
-  X <- mvrnorm(n, mu, Sigma)
-  sample_cov <- (1/n) * t(X) %*% X
+  mu <- c(rep(0,p))
+  X_transposed <- mvrnorm(n, mu, Sigma)
+  sample_cov <- (1/n) * t(X_transposed) %*% X_transposed
   
   # Parameter schätzen
   # gamma
   gamma <- (1/p) * sum(diag(sample_cov %*% diag(p)))
 
   # delta^2
-  delta2 <- (1/5) * norm((sample_cov - gamma * diag(p)), type = "F")^2
+  delta2 <- (1/p) * norm((sample_cov - gamma * diag(p)), type = "F")^2
   
   # beta^2
   beta2_help <- rep(0, n)
   for (i in 1:n){
-    temp <- outer(t(X)[,i] , X[i,]) - sample_cov
-    # Produkt zweier Vektoren um (n x n)-Matrix zu erhalten
+    temp <- outer(t(X_transposed)[,i] , X_transposed[i,]) - sample_cov
+    # Produkt zweier Vektoren um (p x p)-Matrix zu erhalten
     beta2_help[i] <- (1/p) * norm(temp, type = "F")^2 
   }
   beta2_pilot <- (1/n^2) * sum(beta2_help)
@@ -51,11 +50,13 @@ get_non_oracle_estimator <- function(n, p){
   return(list(estimator = estimator, para1 = rho1, para2 = rho2))
 }
 
+## sample cov auch von der ersten funktion ausgeben lassen
+
 get_sample_cov <- function(n, p){
   Sigma <- diag(0.9, nrow = p, ncol = p) + matrix(0.1, nrow = p, ncol = p)
   mu = c(rep(0,p))
-  X <- mvrnorm(n, mu, Sigma)
-  sample_cov <- (1/n) * t(X) %*% X
+  X_transposed <- mvrnorm(n, mu, Sigma)
+  sample_cov <- (1/n) * t(X_transposed) %*% X_transposed
   return(sample_cov)
 }
 
