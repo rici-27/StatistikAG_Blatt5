@@ -96,7 +96,7 @@ ggplot(eigenvalues_df, aes(x = Werte)) +
                      labels = c(
                        paste0("True Mean: ", mean(true_eigenvalues)),
                        paste0("Mean: ", round(mean(storage_ev),4))),
-                     name = "Legende") +
+                     name = "Legende") + 
   labs(
     title = "Histogram der Eigenwerte",
     x = "Werte",

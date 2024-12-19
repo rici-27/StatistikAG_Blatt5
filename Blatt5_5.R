@@ -120,7 +120,7 @@ ggplot() +
   labs(
     title = "Entwicklung des Returns unserer 3 Portfolios",
     x = "Datum",
-    y = "Total log Return"
+    y = "Total Log Return"
   ) + 
   scale_color_manual(
     name = "Legende",
@@ -140,4 +140,3 @@ cat(
 )
 
 # Erwünschte Platzierung für AC 1-9 erreicht
-

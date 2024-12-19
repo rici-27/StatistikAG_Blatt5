@@ -60,6 +60,7 @@ colnames(storage) <- c("Weight", "SquaredBias", "Variance", "MSE")
 # Berechnung
 for (i in (1:length(w))){
   storage[i,] <- get_errors(M, n=100, w[i])
+  print(i)
 }
 
 # Plot
@@ -88,6 +89,7 @@ colnames(storage_mod) <- c("Weight", "SquaredBias", "Variance", "MSE")
 
 for (i in (1:length(w))){
   storage_mod[i,] <- get_errors(M, n=1000, w[i])
+  print(i)
 }
 
 ggplot() + 
