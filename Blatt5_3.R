@@ -12,9 +12,9 @@ mu <- c(rep(0,p))
 w <- 0:100/100
 
 
-# Funktion zur Berechnung des Non-Oracle Estimator
+# Funktion zur Berechnung des Non-Oracle Estimator & Sample Covariance
 
-get_non_oracle_estimator <- function(n, p){
+get_estimators <- function(n, p){
   # Daten simulieren
   Sigma <- diag(0.9, nrow = p, ncol = p) + matrix(0.1, nrow = p, ncol = p)
   mu <- c(rep(0,p))
@@ -42,91 +42,32 @@ get_non_oracle_estimator <- function(n, p){
   alpha2 <- delta2 - beta2
   
   # Gewichte berechnen
-  rho1 <- (beta2/delta2) * gamma
-  rho2 <- alpha2/delta2
+  para1 <- (beta2/delta2)
+  para2 <- alpha2/delta2
   
   # Schätzer berechen
-  estimator <- rho1 * diag(p) + rho2 * sample_cov
-  return(list(estimator = estimator, para1 = rho1, para2 = rho2))
+  shrinkage <- para1 * gamma * diag(p) + para2 * sample_cov
+  return(list(shrinkage = shrinkage, sample_cov = sample_cov, para1 = para1, para2 = para2))
 }
-
-## sample cov auch von der ersten funktion ausgeben lassen
-
-get_sample_cov <- function(n, p){
-  Sigma <- diag(0.9, nrow = p, ncol = p) + matrix(0.1, nrow = p, ncol = p)
-  mu = c(rep(0,p))
-  X_transposed <- mvrnorm(n, mu, Sigma)
-  sample_cov <- (1/n) * t(X_transposed) %*% X_transposed
-  return(sample_cov)
-}
-
-
-# Monte-Carlo Simulation und Berechnung der Eigenwerte
-
-get_estimated_ev <- function(M, n, p){
-  
-  sum_ev_sample_cov <- rep(0,p)
-  for (i in (1:M)){
-    estimator <- get_sample_cov(n, p)
-    sum_ev_sample_cov <- sum_ev_sample_cov + sort(eigen(estimator, symmetric=TRUE, only.values=TRUE)$values, decreasing = FALSE) 
-  }
-  
-  sum_ev_non_oracle <- rep(0,p)
-  for (i in (1:M)){
-    estimator <- get_non_oracle_estimator(n, p)$estimator
-    sum_ev_non_oracle <- sum_ev_non_oracle + sort(eigen(estimator, symmetric=TRUE, only.values=TRUE)$values, decreasing = FALSE) 
-  }
-  
-  estimated_ev <- data.frame(matrix(0, p, 2))
-  colnames(estimated_ev) <- c("SampleCov", "NonOracle")
-  
-  estimated_ev$SampleCov <- sum_ev_sample_cov/M
-  estimated_ev$NonOracle <- sum_ev_non_oracle/M
-  
-  return(estimated_ev)
-}
-
-estimated_ev <- get_estimated_ev(1000, 100, 5)
-true_eigenvalues <- sort(eigen(Sigma)$values)
-indizes <- (1:5)
-
-ggplot() +
-  geom_point(aes(x = indizes, y = estimated_ev$SampleCov, color = "SampleCov", shape = "SampleCov"), size = 3) +
-  geom_point(aes(x = indizes, y = estimated_ev$NonOracle, color = "NonOracle", shape = "NonOracle"), size = 3) +
-  geom_point(aes(x = indizes, y = true_eigenvalues, color = "Sigma", shape = "Sigma"), size = 3) +
-  labs(x = "Indizes", y = "Eigenwerte", title = "Vergleich wahrer und geschätzer Eigenwerte") + 
-  scale_color_manual(
-    values = c("SampleCov" = "darkblue", "NonOracle" = "darkgreen", "Sigma" = "darkred"),
-    name = "Schätzer"
-  ) + 
-  scale_shape_manual(
-    values = c("SampleCov" = 16, "NonOracle" = 17, "Sigma" = 18), # Form der Punkte
-    name = "Schätzer"
-  ) +
-  theme_minimal() +
-  theme(
-    plot.title = element_text(face = "bold", size = 14, hjust = 0.5)
-  )
 
 
 # Alle Eigenwerte und Weights ausgeben lassen
 get_all_est_ev_and_weights <- function(M, n, p){
   # 3-dim Array zur Speicherung aller Eigenwerte
   # Dimension 1 für Sample Cov, Dimension 2 für Non Oracle Estimator
-  ev_array <- array(0, dim=c(2, M*p, 2))
+  ev_array <- array(NA, dim=c(2, M*p, 2))
   
   # Speicher für weights
-  weights <- array(0, dim=c(1000,2))
+  weights <- array(NA, dim=c(M, 2))
 
   for (i in (1:M)){
-    print(i)
-    non_oracle <- get_non_oracle_estimator(n, p)
-    non_oracle_est <- non_oracle$estimator
-    weights[i,] <- c(non_oracle$para1, non_oracle$para2)
-    sample_cov <- get_sample_cov(n, p)
+    estimators_list <- get_estimators(n, p)
+    non_oracle_est <- estimators_list$shrinkage
+    weights[i,] <- c(estimators_list$para1, estimators_list$para2)
+    sample_cov <- estimators_list$sample_cov
     non_oracle_ev <- sort(eigen(non_oracle_est, symmetric=TRUE, only.values=TRUE)$values, decreasing = FALSE) 
     sample_cov_ev <- sort(eigen(sample_cov, symmetric=TRUE, only.values=TRUE)$values, decreasing = FALSE) 
-    
+
     
     for (j in (1:p)){
       ev_array[1, (i-1)*p + j, 1] <- j
@@ -142,41 +83,61 @@ get_all_est_ev_and_weights <- function(M, n, p){
 all_iterations <- get_all_est_ev_and_weights(M=1000, n=100, p=5)
 all_est_ev <- all_iterations$eigenvalues
 weights <- all_iterations$weights
-View(weights)
 
 # Data Frames für BoxPlots erstellen
 
 all_ev_sample_cov <- data.frame(all_est_ev[1,,])
-colnames(all_ev_sample_cov) <- c("Index", "Wert")
+colnames(all_ev_sample_cov) <- c("Index", "Eigenwert")
 all_ev_sample_cov$Schätzer <- "SampleCov"
 
 all_ev_non_oracle <- data.frame(all_est_ev[2,,])
-colnames(all_ev_non_oracle) <- c("Index", "Wert")
+colnames(all_ev_non_oracle) <- c("Index", "Eigenwert")
 all_ev_non_oracle$Schätzer <- "NonOracle"
 
 all_ev_df <- rbind(all_ev_non_oracle, all_ev_sample_cov)
 all_ev_df$Index <- as.factor(all_ev_df$Index)
 
-ggplot(all_ev_df, aes(x=Schätzer, y=Wert)) +
-  geom_boxplot(aes(fill=Index)) +
-  labs(title = "Vergleich von Non Oracle Estimator und Sample Cov") +
+ggplot(all_ev_df, aes(x=Index, y=Eigenwert)) +
+  geom_boxplot(aes(fill=Schätzer), outlier.colour = "black", outlier.size = 1) +
+  geom_segment(aes(x = 0.5, xend = 4.5, y = 0.9, yend = 0.9, color = "Eigenwert 0.9"), 
+               linetype = "dashed", size = 0.8, inherit.aes = FALSE) +
+  geom_segment(aes(x = 4.5, xend = 5.5, y = 1.4, yend = 1.4, color = "Eigenwert 1.4"), 
+               linetype = "dashed", size = 0.8, inherit.aes = FALSE) +
+  scale_color_manual(
+    values = c("Eigenwert 0.9" = "black", "Eigenwert 1.4" = "brown"),
+    name = "Legende"
+  ) +
+  labs(title = "Vergleich der sortierten Eigenwerte von Non Oracle Estimator und Sample Cov") +
   theme_minimal() +
   theme(
     plot.title = element_text(face = "bold", size = 14, hjust = 0.5)
   )
 
-######### hier noch irgendwie weights plotten 
+# Plot Highlight
+ggplot(all_ev_df, aes(x=Schätzer, y=Eigenwert)) +
+  geom_boxplot(aes(fill=Index)) +
+  labs(title = "Vergleich der sortierten Eigenwerte von Non Oracle Estimator und Sample Cov") +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(face = "bold", size = 14, hjust = 0.5)
+  )
 
-View(weights)
-# überlegen wo die Nuller her kommen
-# wichtig: bei meinem rho1 ist gamma mit drin (soll so)
-test_df <- data.frame(weights[,1])
-View(test_df)
-colnames(test_df) = c("Weight")
-test_df$Para <- 1
+# Vergleich der geschätzen optimalen Gewichte zu den Ergebnissen aus b)
+weights_df <- data.frame(weights[,1])
+colnames(weights_df) = c("Optimal_Weight")
+weights_df$Boxplot <- as.factor(" ")
 
-
-ggplot(test_df, aes(x = Para, y = Weight)) + 
-  geom_boxplot(color = "blue", fill = "blue", alpha = 0.2, 
-               notch = TRUE, notchwidth = 0.6,
-               outlier.colour = "red", outlier.fill = "red", outlier.size = 2) 
+ggplot(weights_df, aes(x = Boxplot, y = Optimal_Weight)) + 
+  geom_boxplot(color = "purple", fill = "purple", alpha = 0.2,
+               outlier.colour = "red", outlier.fill = "red", outlier.size = 2)  +
+  geom_hline(aes(yintercept = w_optimal, color = "Gewicht für n=100"), linetype = "dashed") +
+  geom_hline(aes(yintercept = w_optimal_mod, color = "Gewicht für n=1000"), linetype = "dashed") +
+  scale_color_manual(
+    name = "Referenzlinien", 
+    values = c("Gewicht für n=100" = "blue", "Gewicht für n=1000" = "orange")
+  ) +
+  labs(title = "Vergleich der geschätzen optimalen Gewichte") +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(face = "bold", size = 14, hjust = 0.5)
+  )
