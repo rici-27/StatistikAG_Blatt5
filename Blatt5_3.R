@@ -7,7 +7,7 @@ library(MASS)
 p <- 5
 n <- 100
 M <- 1000
-Sigma <- matrix(c( 1 , rep (.1 ,4) , .1 , 1 , rep ( .1 , 3 ) , .1 , .1 , 1 , .1 , .1 , rep(.1 ,3) ,1 ,.1 , rep (.1 ,4) ,1) ,5 ,5)
+Sigma <- diag(0.9, nrow = p, ncol = p) + matrix(0.1, nrow = p, ncol = p)
 mu <- c(rep(0,p))
 w <- 0:100/100
 
@@ -47,7 +47,10 @@ get_estimators <- function(n, p){
   
   # Schätzer berechen
   shrinkage <- para1 * gamma * diag(p) + para2 * sample_cov
-  return(list(shrinkage = shrinkage, sample_cov = sample_cov, para1 = para1, para2 = para2))
+  return(list(shrinkage = shrinkage,
+              sample_cov = sample_cov,
+              para1 = para1,
+              para2 = para2))
 }
 
 
@@ -65,8 +68,10 @@ get_all_est_ev_and_weights <- function(M, n, p){
     non_oracle_est <- estimators_list$shrinkage
     weights[i,] <- c(estimators_list$para1, estimators_list$para2)
     sample_cov <- estimators_list$sample_cov
-    non_oracle_ev <- sort(eigen(non_oracle_est, symmetric=TRUE, only.values=TRUE)$values, decreasing = FALSE) 
-    sample_cov_ev <- sort(eigen(sample_cov, symmetric=TRUE, only.values=TRUE)$values, decreasing = FALSE) 
+    non_oracle_ev <- sort(eigen(non_oracle_est, symmetric=TRUE,
+                                only.values=TRUE)$values, decreasing = FALSE) 
+    sample_cov_ev <- sort(eigen(sample_cov, symmetric=TRUE,
+                                only.values=TRUE)$values, decreasing = FALSE) 
 
     
     for (j in (1:p)){
@@ -130,8 +135,10 @@ weights_df$Boxplot <- as.factor(" ")
 ggplot(weights_df, aes(x = Boxplot, y = Optimal_Weight)) + 
   geom_boxplot(color = "purple", fill = "purple", alpha = 0.2,
                outlier.colour = "red", outlier.fill = "red", outlier.size = 2)  +
-  geom_hline(aes(yintercept = w_optimal, color = "Gewicht für n=100"), linetype = "dashed") +
-  geom_hline(aes(yintercept = w_optimal_mod, color = "Gewicht für n=1000"), linetype = "dashed") +
+  geom_hline(aes(yintercept = w_optimal, color = "Gewicht für n=100"),
+             linetype = "dashed") +
+  geom_hline(aes(yintercept = w_optimal_mod, color = "Gewicht für n=1000"),
+             linetype = "dashed") +
   scale_color_manual(
     name = "Referenzlinien", 
     values = c("Gewicht für n=100" = "blue", "Gewicht für n=1000" = "orange")

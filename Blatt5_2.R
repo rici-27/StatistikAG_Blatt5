@@ -7,7 +7,7 @@ library(MASS)
 p <- 5
 n <- 100
 M <- 1000
-Sigma <- matrix(c( 1,rep (.1 ,4) , .1, 1, rep ( .1 , 3 ), .1, .1 , 1 , .1 , .1 , rep(.1 ,3) ,1 ,.1 , rep (.1 ,4) ,1) ,5 ,5)
+Sigma <- diag(0.9, nrow = p, ncol = p) + matrix(0.1, nrow = p, ncol = p)
 mu <- c(rep(0,p))
 w <- 0:100/100
 # Parameter gamma = (1/p) * trace(Sigma)
@@ -65,10 +65,14 @@ for (i in (1:length(w))){
 
 # Plot
 ggplot() + 
-  geom_point(aes(x=storage$Weight, y = storage$SquaredBias, color = "Squared Bias"), show.legend = TRUE) + 
-  geom_point(aes(x=storage$Weight, y = storage$Variance, color = "Variance"), show.legend = TRUE) + 
-  geom_point(aes(x=storage$Weight, y = storage$MSE, color = "MSE"), show.legend = TRUE) + 
-  labs(x = "Gewicht w", y = "Werte", title = "Oracle Shrinkage Estimator Performance nach Gewicht, n = 100") +
+  geom_point(aes(x=storage$Weight, y = storage$SquaredBias, color = "Squared Bias"),
+             show.legend = TRUE) + 
+  geom_point(aes(x=storage$Weight, y = storage$Variance, color = "Variance"),
+             show.legend = TRUE) + 
+  geom_point(aes(x=storage$Weight, y = storage$MSE, color = "MSE"),
+             show.legend = TRUE) + 
+  labs(x = "Gewicht w", y = "Werte",
+       title = "Oracle Shrinkage Estimator Performance nach Gewicht, n = 100") +
   scale_color_manual(
     values = c("Squared Bias" = "darkblue", "Variance" = "darkgreen", "MSE" = "darkred"),
     name = "Legende"
@@ -93,10 +97,14 @@ for (i in (1:length(w))){
 }
 
 ggplot() + 
-  geom_point(aes(x=storage_mod$Weight, y = storage_mod$SquaredBias, color = "Squared Bias"), show.legend = TRUE) + 
-  geom_point(aes(x=storage_mod$Weight, y = storage_mod$Variance, color = "Variance"), show.legend = TRUE) + 
-  geom_point(aes(x=storage_mod$Weight, y = storage_mod$MSE, color = "MSE"), show.legend = TRUE) + 
-  labs(x = "Gewicht w", y = "Werte", title = "Oracle Shrinkage Estimator Performance nach Gewicht, n = 1000") +
+  geom_point(aes(x=storage_mod$Weight, y = storage_mod$SquaredBias,
+                 color = "Squared Bias"), show.legend = TRUE) + 
+  geom_point(aes(x=storage_mod$Weight, y = storage_mod$Variance,
+                 color = "Variance"), show.legend = TRUE) + 
+  geom_point(aes(x=storage_mod$Weight, y = storage_mod$MSE,
+                 color = "MSE"), show.legend = TRUE) + 
+  labs(x = "Gewicht w", y = "Werte",
+       title = "Oracle Shrinkage Estimator Performance nach Gewicht, n = 1000") +
   scale_color_manual(
     values = c("Squared Bias" = "darkblue", "Variance" = "darkgreen", "MSE" = "darkred"),
     name = "Fehler"

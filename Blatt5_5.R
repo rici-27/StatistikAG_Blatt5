@@ -2,10 +2,12 @@
 
 Stock_Bond <- read_csv("Stock_Bond_2004_to_2006.csv", 
     col_types = cols(Date = col_skip(), DATE = col_date(format = "%m/%d/%Y"),
-                     Date = col_skip(), Three_month_treasury = col_skip(), GM_Volume = col_skip(),
-                     F_Volume = col_skip(), UTX_Volume = col_skip(), CAT_Volume = col_skip(),
-                     MRK_Volume = col_skip(), PFE_Volume = col_skip(), IBM_Volume = col_skip(),
-                     C_Volume = col_skip(), XOM_Volume = col_skip(), "S&P_Volume" = col_skip(),
+                     Date = col_skip(), Three_month_treasury = col_skip(),
+                     GM_Volume = col_skip(), F_Volume = col_skip(),
+                     UTX_Volume = col_skip(), CAT_Volume = col_skip(),
+                     MRK_Volume = col_skip(), PFE_Volume = col_skip(),
+                     IBM_Volume = col_skip(), C_Volume = col_skip(), 
+                     XOM_Volume = col_skip(), "S&P_Volume" = col_skip(),
                      MSFT_Volume = col_skip(),
                      "1 year Treasury Constant Maturity Rate" = col_skip(),
                      "3-Year Treasury Constant Maturity Rate" = col_skip(),
@@ -51,7 +53,8 @@ get_weights <- function(X_transposed){
   ones_vector <- c(rep(1,p))
   sample_cov_inverse <- solve(sample_cov)
   # sum() repräsentiert Skalarprodukt mit 1-Vektor im Nenner
-  weights_sample_cov <- (sample_cov_inverse %*% ones_vector) / sum(sample_cov_inverse %*% ones_vector)
+  weights_sample_cov <- (sample_cov_inverse %*% ones_vector) 
+                          / sum(sample_cov_inverse %*% ones_vector)
   
   # Gewichte Non Oracle berechnen
   # Parameter schätzen
@@ -74,7 +77,8 @@ get_weights <- function(X_transposed){
   non_oracle_est <- para1 * gamma * diag(p) + para2 * sample_cov
   non_oracle_inv <- solve(non_oracle_est)
   
-  weights_non_oracle <- (non_oracle_inv %*% ones_vector) / sum(non_oracle_inv %*% ones_vector)
+  weights_non_oracle <- (non_oracle_inv %*% ones_vector)
+                          / sum(non_oracle_inv %*% ones_vector)
   
   weights_benchmark <- rep(1/p, p)
   
@@ -107,16 +111,22 @@ return_non_oracle[1] <- 0
 return_benchmark[1] <- 0
 
 for (i in 1:days){
-  return_sample_cov[i+1] <- return_sample_cov[i] + sum(weights_storage[i,1, ] * Return[(days+i),] )
-  return_non_oracle[i+1] <- return_non_oracle[i] + sum(weights_storage[i,2, ] * Return[(days+i),] )
-  return_benchmark[i+1] <- return_benchmark[i] + sum(weights_storage[i,3, ] * Return[(days+i),] )
+  return_sample_cov[i+1] <- return_sample_cov[i] 
+                              + sum(weights_storage[i,1, ] * Return[(days+i),] )
+  return_non_oracle[i+1] <- return_non_oracle[i] 
+                              + sum(weights_storage[i,2, ] * Return[(days+i),] )
+  return_benchmark[i+1] <- return_benchmark[i] 
+                              + sum(weights_storage[i,3, ] * Return[(days+i),] )
 }
 
 # Plot der Verläufe der Log Returns
 ggplot() +
-  geom_line(aes(x = Data$Date[(days):(2*days)], y = return_sample_cov, color = "SampleCov"), size = 1) + 
-  geom_line(aes(x = Data$Date[(days):(2*days)], y = return_non_oracle, color = "NonOracle"), size = 1) + 
-  geom_line(aes(x = Data$Date[(days):(2*days)], y = return_benchmark, color = "Benchmark"), size = 1) + 
+  geom_line(aes(x = Data$Date[(days):(2*days)], y = return_sample_cov, 
+                color = "SampleCov"), size = 1) + 
+  geom_line(aes(x = Data$Date[(days):(2*days)], y = return_non_oracle, 
+                color = "NonOracle"), size = 1) + 
+  geom_line(aes(x = Data$Date[(days):(2*days)], y = return_benchmark, 
+                color = "Benchmark"), size = 1) + 
   labs(
     title = "Entwicklung des Returns unserer 3 Portfolios",
     x = "Datum",
@@ -124,7 +134,9 @@ ggplot() +
   ) + 
   scale_color_manual(
     name = "Legende",
-    values = c("SampleCov" = "blue", "NonOracle" = "purple", "Benchmark" = "black")
+    values = c("SampleCov" = "blue",
+               "NonOracle" = "purple",
+               "Benchmark" = "black")
   ) +
   theme_minimal() +
   theme(
