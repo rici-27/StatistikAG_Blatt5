@@ -48,9 +48,9 @@ ggplot(eigenvalues_df, aes(x = Index, y = Werte)) +
   geom_boxplot(color = "blue", fill = "blue", alpha = 0.2, notch = FALSE,
                outlier.colour = "red", outlier.fill = "red", outlier.size = 2) +
   geom_segment(aes(x = 0.5, xend = 4.5, y = 0.9, yend = 0.9, color = "Eigenwert 0.9"), 
-               linetype = "dashed", size = 0.8, inherit.aes = FALSE) +
+               linetype = "dashed", linewidth = 0.8, inherit.aes = FALSE) +
   geom_segment(aes(x = 4.5, xend = 5.5, y = 1.4, yend = 1.4, color = "Eigenwert 1.4"), 
-               linetype = "dashed", size = 0.8, inherit.aes = FALSE) +
+               linetype = "dashed", linewidth = 0.8, inherit.aes = FALSE) +
   # inherit.as = FALSE -> Wir überschreiben das globale aes
   scale_color_manual(
     values = c("Eigenwert 0.9" = "darkgreen", "Eigenwert 1.4" = "darkred"),
