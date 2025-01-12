@@ -72,7 +72,7 @@ sum_calc_ev <- rowSums(storage_ev)
 
 ggplot() + 
   geom_histogram(aes(x = sum_calc_ev), binwidth = 0.05,
-                 color="black",fill="blue", alpha=0.2) +
+                 color="black", fill="blue", alpha=0.2) +
   labs(x = "Summe der Eigenwerte", y = "Anzahl",
        title = "Histogramm der Summen der Eigenwerte") +
   geom_vline(aes(xintercept = sum_true_ev, color = "True Sum"),
@@ -82,7 +82,7 @@ ggplot() +
   scale_color_manual(values = c("True Sum" = "blue", "Mean Sum" = "purple"), 
                      labels = c(
                        paste0("True Sum: ", sum_true_ev),
-                       paste0("Mean Sum: ", round(mean(sum_calc_ev),4))),
+                       paste0("Mean Sum: ", round(mean(sum_calc_ev), 4))),
                      name = "Legende") +
   theme_minimal() +
   theme(
