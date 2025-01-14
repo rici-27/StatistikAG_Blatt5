@@ -1,11 +1,16 @@
+library(tidyverse)
+library(MASS)
+
 ## Aufgabe d)
 
 n <- 100
+M <- 1000
 get_ratio <- function(p, n=100, M=1000){
   error_sample_cov <- 0
   error_non_oracle <- 0
   Sigma <- diag(0.9, nrow = p, ncol = p) + matrix(0.1, nrow = p, ncol = p)
   Sigma_inv <- solve(Sigma)
+  
   for (i in (1:M)){
     estimators_list <- get_estimators(n, p)
     sample_cov <- estimators_list$sample_cov

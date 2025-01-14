@@ -1,5 +1,5 @@
-library(tidyverse)
-library(MASS)
+library(tidyverse) # für ggplot2 zum plotten
+library(MASS) # Simulation von multivariat normalverteilten Daten
 
 # Vorbereitung
 
@@ -42,6 +42,7 @@ for (i in (0:4)){
 }
 # Index Spalte von numerischen in kategorische Werte umwandeln
 eigenvalues_df$Index <- as.factor(eigenvalues_df$Index)
+View(eigenvalues_df)
 
 # Box Plot der Eigenwerte
 ggplot(eigenvalues_df, aes(x = Index, y = Werte)) + 
