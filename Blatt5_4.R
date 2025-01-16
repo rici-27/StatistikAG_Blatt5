@@ -16,11 +16,12 @@ get_ratio <- function(p, n=100, M=1000){
     sample_cov <- estimators_list$sample_cov
     non_oracle_est <- estimators_list$shrinkage
     
-    error_sample_cov <- error_sample_cov 
-                        + (1/p) * norm(Sigma_inv - solve(sample_cov), type = "F")^2
-    error_non_oracle <- error_non_oracle
-                        + (1/p) * norm(Sigma_inv - solve(non_oracle_est), type = "F")^2
+    error_sample_cov <- error_sample_cov +
+                        (1/p) * norm(Sigma_inv - solve(sample_cov), type = "F")^2
+    error_non_oracle <- error_non_oracle +
+                        (1/p) * norm(Sigma_inv - solve(non_oracle_est), type = "F")^2
   }
+  
   # Division durch M für mittleren Fehler
   error_non_oracle <- error_non_oracle/M
   error_sample_cov <- error_sample_cov/M
@@ -58,8 +59,8 @@ ggplot() +
 
 # Plot für die Fehler
 ggplot() + 
-  geom_point(aes(x= dim[1:5], y = errors[(1:5),1], color = "Sample Cov"), size = 2) +
-  geom_point(aes(x= dim[1:5], y = errors[(1:5),2], color = "Non Oracle"), size = 2) +
+  geom_point(aes(x= dim[1:10], y = errors[(1:10),1], color = "Sample Cov"), size = 2) +
+  geom_point(aes(x= dim[1:10], y = errors[(1:10),2], color = "Non Oracle"), size = 2) +
   labs(x = "Dimension", y = "Fehler",
        title = "Vergleich der Schätzfehler von Non Oracle und Sample Cov") +
   scale_color_manual(
