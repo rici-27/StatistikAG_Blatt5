@@ -59,7 +59,7 @@ colnames(storage) <- c("Weight", "SquaredBias", "Variance", "MSE")
 
 # Berechnung
 for (i in (1:length(w))){
-  storage[i,] <- get_errors(M, n=100, w[i])
+  storage[i,] <- get_errors(M, n, w[i])
   print(i)
 }
 

@@ -58,6 +58,7 @@ get_estimators <- function(n, p){
 get_all_est_ev_and_weights <- function(M, n, p){
   # 3-dim Array zur Speicherung aller Eigenwerte
   # Dimension 1 für Sample Cov, Dimension 2 für Non Oracle Estimator
+  # 3-dim Array mit Index für Boxplot
   ev_array <- array(NA, dim=c(2, M*p, 2))
   
   # Speicher für weights
@@ -101,6 +102,8 @@ all_ev_non_oracle$Schätzer <- "NonOracle"
 
 all_ev_df <- rbind(all_ev_non_oracle, all_ev_sample_cov)
 all_ev_df$Index <- as.factor(all_ev_df$Index)
+
+View(all_ev_df)
 
 ggplot(all_ev_df, aes(x=Index, y=Eigenwert)) +
   geom_boxplot(aes(fill=Schätzer), outlier.colour = "black", outlier.size = 1) +
