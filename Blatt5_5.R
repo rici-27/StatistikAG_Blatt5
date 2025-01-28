@@ -19,7 +19,6 @@ Stock_Bond <- read_csv("Stock_Bond_2004_to_2006.csv",
                      "Yen/$" = col_skip(),                                  
                      "Brazil Real/$" = col_skip()
                      ))
-View(Stock_Bond)
 Data <- data.frame(Stock_Bond$DATE)
 colnames(Data) <- c("Date")
 Data$GM_returns <- c(NA, diff(log(Stock_Bond$GM_AC)))
@@ -98,6 +97,7 @@ for (i in (1:days)){
   weights_storage[i,1,] <- weights_list$weights_sample_cov
   weights_storage[i,2,] <- weights_list$weights_non_oracle
   weights_storage[i,3,] <- weights_list$weights_benchmark
+  print(i)
 }
 
 

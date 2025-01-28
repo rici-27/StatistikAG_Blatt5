@@ -59,8 +59,8 @@ ggplot() +
 
 # Plot für die Fehler
 ggplot() + 
-  geom_point(aes(x= dim[1:10], y = errors[(1:10),1], color = "Sample Cov"), size = 2) +
-  geom_point(aes(x= dim[1:10], y = errors[(1:10),2], color = "Non Oracle"), size = 2) +
+  geom_point(aes(x= dim[1:5], y = errors[(1:5),1], color = "Sample Cov"), size = 2) +
+  geom_point(aes(x= dim[1:5], y = errors[(1:5),2], color = "Non Oracle"), size = 2) +
   labs(x = "Dimension", y = "Fehler",
        title = "Vergleich der Schätzfehler von Non Oracle und Sample Cov") +
   scale_color_manual(

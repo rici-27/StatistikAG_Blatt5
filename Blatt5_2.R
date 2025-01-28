@@ -29,7 +29,7 @@ get_errors <- function(M, n, w){
     shrink_est <- w * gamma * diag(p) + (1-w) * S
     
     # Erwartungswert des Shrinkage Estimators (S ist erwartungstreu)
-    expectation_of_shrink_est <- w * gamma * diag(p) + (1-w) * Sigma 
+    expectation_of_shrink_est <- w * gamma * diag(p) + (1-w) * Sigma
     
     # Squared Bias # gleich für jede Iteration!
     A <- expectation_of_shrink_est - Sigma
