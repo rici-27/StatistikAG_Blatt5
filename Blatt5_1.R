@@ -24,6 +24,7 @@ true_eigenvalues <- sort(eigen(Sigma, symmetric=TRUE,
 
 # Speicher für Eigenwerte erstellen
 storage_ev <- matrix(NA, nrow = M, ncol = p)
+
 # Monte Carlo Simulation
 for (i in (1:M)){
   X_transposed <- mvrnorm(n, mu, Sigma)
