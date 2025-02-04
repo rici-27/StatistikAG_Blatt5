@@ -1,3 +1,6 @@
+library(tidyverse)
+library(MASS)
+
 ## Aufgabe e)
 
 Stock_Bond <- read_csv("Stock_Bond_2004_to_2006.csv", 
@@ -128,7 +131,7 @@ ggplot() +
   geom_line(aes(x = Data$Date[(days):(2*days)], y = return_benchmark, 
                 color = "Benchmark"), size = 1) + 
   labs(
-    title = "Entwicklung des Returns unserer 3 Portfolios",
+    title = "Entwicklung der Returns unserer 3 Portfolien",
     x = "Datum",
     y = "Total Log Return"
   ) + 
